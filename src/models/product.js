@@ -33,7 +33,11 @@ export default function defineProduct(sequelize) {
 				allowNull: false,
 				defaultValue: 0,
 			},
-			imagePath: {
+			imageUrl: {
+				type: DataTypes.STRING,
+				allowNull: true,
+			},
+			imagePublicId: {
 				type: DataTypes.STRING,
 				allowNull: true,
 			},

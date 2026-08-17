@@ -1,40 +1,16 @@
-import { randomUUID } from "node:crypto";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-const getImagesDir = () => {
-	const imagesDir = process.env.USER_DATA_PATH
-		? path.join(process.env.USER_DATA_PATH, "images")
-		: path.resolve(__dirname, "../../images");
-
-	if (!fs.existsSync(imagesDir)) {
-		fs.mkdirSync(imagesDir, { recursive: true });
-	}
-
-	return imagesDir;
-};
+import cloudinary from "../config/cloudinary.js";
 
 export const uploadImage = async (buffer, mimetype) => {
-	const ext = mimetype.split("/")[1];
-	const filename = `${randomUUID()}.${ext}`;
-	const imagesDir = getImagesDir();
-	const filepath = path.join(imagesDir, filename);
+	const base64 = `data:${mimetype};base64,${buffer.toString("base64")}`;
 
-	await fs.promises.writeFile(filepath, buffer);
+	const result = await cloudinary.uploader.upload(base64, {
+		folder: "layersprint/products",
+	});
 
-	return `/images/${filename}`;
+	return { url: result.secure_url, publicId: result.public_id };
 };
 
-export const deleteImage = async (imgPath) => {
-	if (!imgPath) return;
-	const filename = path.basename(imgPath);
-	const imagesDir = getImagesDir();
-	const filepath = path.join(imagesDir, filename);
-
-	if (fs.existsSync(filepath)) {
-		await fs.promises.unlink(filepath);
-	}
+export const deleteImage = async (publicId) => {
+	if (!publicId) return;
+	await cloudinary.uploader.destroy(publicId);
 };

@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import compression from "compression";
@@ -21,24 +20,7 @@ const PORT = process.env.PORT || 3000;
 
 const app = express();
 
-const imagesDir = process.env.USER_DATA_PATH
-	? path.join(process.env.USER_DATA_PATH, "images")
-	: path.resolve(__dirname, "images");
-
-console.log("imagesDir:", imagesDir);
-console.log("existe:", fs.existsSync(imagesDir));
-
-if (!fs.existsSync(imagesDir)) {
-	fs.mkdirSync(imagesDir, { recursive: true });
-}
-
-app.use("/images", express.static(imagesDir));
-
-app.use(
-	helmet({
-		crossOriginResourcePolicy: { policy: "cross-origin" },
-	}),
-);
+app.use(helmet());
 app.use(compression());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));

@@ -23,5 +23,14 @@ export const messages = {
 		deleteError: "Error al eliminar la máquina.",
 		notFound: "La máquina no fue encontrada.",
 	},
-	product: {},
+	product: {
+		getError: "Error al obtener los productos.",
+		createSuccess: "Producto creado correctamente.",
+		createError: "Error al crear el producto.",
+		notFound: "Producto no encontrado.",
+		updateSuccess: "Producto actualizado correctamente.",
+		updateError: "Error al actualizar el producto.",
+		deleteSuccess: "Producto eliminado correctamente.",
+		deleteError: "Error al eliminar el producto.",
+	},
 };
