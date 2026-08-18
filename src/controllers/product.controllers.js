@@ -73,9 +73,14 @@ export const getProductById = async (req, res) => {
 };
 
 export const createProduct = async (req, res) => {
-	const { name, weight, timeToPrint, laborCost, extras, machineId } = req.body;
+	const { name, timeToPrint, laborCost, extras, machineId } = req.body;
 	const filaments = JSON.parse(req.body.filaments || "[]");
 	try {
+		const weight = filaments.reduce(
+			(total, f) => total + Number(f.gramsUsed),
+			0,
+		);
+
 		let imageUrl = null;
 		let imagePublicId = null;
 
@@ -117,7 +122,7 @@ export const createProduct = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
 	const { id } = req.params;
-	const { name, weight, timeToPrint, laborCost, extras, machineId } = req.body;
+	const { name, timeToPrint, laborCost, extras, machineId } = req.body;
 	try {
 		const product = await Product.findByPk(id);
 		if (!product) {
@@ -129,6 +134,22 @@ export const updateProduct = async (req, res) => {
 			const uploaded = await uploadImage(req.file.buffer, req.file.mimetype);
 			product.imageUrl = uploaded.url;
 			product.imagePublicId = uploaded.publicId;
+		}
+
+		let weight = product.weight;
+
+		if (req.body.filaments) {
+			const filaments = JSON.parse(req.body.filaments);
+			weight = filaments.reduce((total, f) => total + Number(f.gramsUsed), 0);
+
+			await ProductFilament.destroy({ where: { productId: product.id } });
+			await ProductFilament.bulkCreate(
+				filaments.map((f) => ({
+					productId: product.id,
+					filamentId: f.filamentId,
+					gramsUsed: f.gramsUsed,
+				})),
+			);
 		}
 
 		await product.update({

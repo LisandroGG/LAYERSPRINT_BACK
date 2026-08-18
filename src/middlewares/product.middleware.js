@@ -6,7 +6,6 @@ export const validateProductBody = (req, res, next) => {
 
 	if (
 		name === undefined ||
-		weight === undefined ||
 		timeToPrint === undefined ||
 		machineId === undefined
 	) {
@@ -18,7 +17,6 @@ export const validateProductBody = (req, res, next) => {
 	}
 
 	if (
-		Number.isNaN(Number(weight)) ||
 		Number.isNaN(Number(timeToPrint)) ||
 		Number.isNaN(Number(machineId))
 	) {
