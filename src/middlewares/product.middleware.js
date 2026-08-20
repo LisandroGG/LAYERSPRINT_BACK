@@ -1,7 +1,7 @@
 import { messages } from "../helpers/messages.js";
 
 export const validateProductBody = (req, res, next) => {
-	const { name, weight, timeToPrint, laborCost, extras, machineId, filaments } =
+	const { name, timeToPrint, laborCost, extras, machineId, filaments } =
 		req.body;
 
 	if (
@@ -16,10 +16,7 @@ export const validateProductBody = (req, res, next) => {
 		return res.status(400).json({ message: messages.global.invalidFieldType });
 	}
 
-	if (
-		Number.isNaN(Number(timeToPrint)) ||
-		Number.isNaN(Number(machineId))
-	) {
+	if (Number.isNaN(Number(timeToPrint)) || Number.isNaN(Number(machineId))) {
 		return res.status(400).json({ message: messages.global.invalidFieldType });
 	}
 

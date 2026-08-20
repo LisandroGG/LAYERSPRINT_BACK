@@ -1,11 +1,23 @@
+import { Op } from "sequelize";
 import { messages } from "../helpers/messages.js";
 import { buildPagedResponse, getPagination } from "../helpers/pagination.js";
 import { Machine } from "../models/index.js";
 
 export const getAllMachines = async (req, res) => {
 	try {
+		const { name } = req.query;
 		const { page, limit, offset } = getPagination(req.query, 9);
+
+		const conditions = [];
+
+		if (name) {
+			conditions.push({
+				name: { [Op.like]: `%${name}%` },
+			});
+		}
+
 		const { count: total, rows } = await Machine.findAndCountAll({
+			where: conditions,
 			limit,
 			offset,
 			order: [["id", "ASC"]],
