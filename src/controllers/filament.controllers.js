@@ -6,7 +6,7 @@ import { Filament } from "../models/index.js";
 export const getAllFilaments = async (req, res) => {
 	try {
 		const { brand, material, diameter, color } = req.query;
-		const { page, limit, offset } = getPagination(req.query, 9);
+		const { page, limit, offset } = getPagination(req.query, 12);
 
 		const conditions = [];
 
