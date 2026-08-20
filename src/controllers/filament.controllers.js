@@ -5,40 +5,23 @@ import { Filament } from "../models/index.js";
 
 export const getAllFilaments = async (req, res) => {
 	try {
-		const { brand, material, diameter, color } = req.query;
+		const { search } = req.query;
 		const { page, limit, offset } = getPagination(req.query, 12);
 
-		const conditions = [];
-
-		if (brand) {
-			conditions.push({
-				brand: { [Op.like]: `%${brand}%` },
-			});
-		}
-
-		if (material) {
-			conditions.push({
-				material: { [Op.like]: `%${material}%` },
-			});
-		}
-
-		if (diameter) {
-			conditions.push({
-				diameter: { [Op.like]: `%${diameter}%` },
-			});
-		}
-
-		if (color) {
-			conditions.push({
-				color: { [Op.like]: `%${color}%` },
-			});
-		}
-
-		const whereConditions =
-			conditions.length > 0 ? { [Op.and]: conditions } : {};
+		const where = search
+			? {
+					[Op.and]: search.split(" ").map((term) => ({
+						[Op.or]: [
+							{ brand: { [Op.like]: `%${term}%` } },
+							{ material: { [Op.like]: `%${term}%` } },
+							{ color: { [Op.like]: `%${term}%` } },
+						],
+					})),
+				}
+			: undefined;
 
 		const { count: total, rows } = await Filament.findAndCountAll({
-			where: whereConditions,
+			where,
 			limit,
 			offset,
 			order: [["id", "ASC"]],

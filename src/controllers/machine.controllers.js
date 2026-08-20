@@ -5,19 +5,12 @@ import { Machine } from "../models/index.js";
 
 export const getAllMachines = async (req, res) => {
 	try {
-		const { name } = req.query;
 		const { page, limit, offset } = getPagination(req.query, 9);
-
-		const conditions = [];
-
-		if (name) {
-			conditions.push({
-				name: { [Op.like]: `%${name}%` },
-			});
-		}
+		const { search } = req.query;
+		const where = search ? { name: { [Op.like]: `%${search}%` } } : undefined;
 
 		const { count: total, rows } = await Machine.findAndCountAll({
-			where: conditions,
+			where,
 			limit,
 			offset,
 			order: [["id", "ASC"]],

@@ -9,6 +9,7 @@ import {
 	Product,
 	ProductFilament,
 	Settings,
+	sequelize,
 } from "../models/index.js";
 
 const productIncludes = [
@@ -26,19 +27,12 @@ async function getKwhPrice() {
 
 export const getAllProducts = async (req, res) => {
 	try {
-		const { name } = req.query;
 		const { page, limit, offset } = getPagination(req.query, 9);
-
-		const conditions = [];
-
-		if (name) {
-			conditions.push({
-				name: { [Op.like]: `%${name}%` },
-			});
-		}
+		const { search } = req.query;
+		const where = search ? { name: { [Op.like]: `%${search}%` } } : undefined;
 
 		const { count: total, rows } = await Product.findAndCountAll({
-			where: conditions,
+			where,
 			limit,
 			offset,
 			order: [["id", "ASC"]],
@@ -87,6 +81,7 @@ export const getProductById = async (req, res) => {
 export const createProduct = async (req, res) => {
 	const { name, timeToPrint, laborCost, extras, machineId } = req.body;
 	const filaments = JSON.parse(req.body.filaments || "[]");
+	const t = await sequelize.transaction();
 	try {
 		const weight = filaments.reduce(
 			(total, f) => total + Number(f.gramsUsed),
@@ -102,16 +97,19 @@ export const createProduct = async (req, res) => {
 			imagePublicId = uploaded.publicId;
 		}
 
-		const product = await Product.create({
-			name,
-			weight,
-			timeToPrint,
-			laborCost,
-			extras,
-			machineId,
-			imageUrl,
-			imagePublicId,
-		});
+		const product = await Product.create(
+			{
+				name,
+				weight,
+				timeToPrint,
+				laborCost,
+				extras,
+				machineId,
+				imageUrl,
+				imagePublicId,
+			},
+			{ transaction: t },
+		);
 
 		if (filaments.length) {
 			await ProductFilament.bulkCreate(
@@ -120,14 +118,26 @@ export const createProduct = async (req, res) => {
 					filamentId: f.filamentId,
 					gramsUsed: f.gramsUsed,
 				})),
+				{ transaction: t },
 			);
 		}
 
+		await t.commit();
+
+		const fullProduct = await Product.findByPk(product.id, {
+			include: productIncludes,
+		});
+		const kwhPrice = await getKwhPrice();
+
 		res.status(201).json({
-			product,
+			product: {
+				...fullProduct.toJSON(),
+				cost: calculateProductCost(fullProduct, kwhPrice),
+			},
 			message: messages.product.createSuccess,
 		});
 	} catch (_error) {
+		await t.rollback();
 		res.status(500).json({ error: messages.product.createError });
 	}
 };
@@ -135,9 +145,11 @@ export const createProduct = async (req, res) => {
 export const updateProduct = async (req, res) => {
 	const { id } = req.params;
 	const { name, timeToPrint, laborCost, extras, machineId } = req.body;
+	const t = await sequelize.transaction();
 	try {
 		const product = await Product.findByPk(id);
 		if (!product) {
+			await t.rollback();
 			return res.status(404).json({ message: messages.product.notFound });
 		}
 
@@ -154,42 +166,41 @@ export const updateProduct = async (req, res) => {
 			const filaments = JSON.parse(req.body.filaments);
 			weight = filaments.reduce((total, f) => total + Number(f.gramsUsed), 0);
 
-			await ProductFilament.destroy({ where: { productId: product.id } });
+			await ProductFilament.destroy({
+				where: { productId: product.id },
+				transaction: t,
+			});
 			await ProductFilament.bulkCreate(
 				filaments.map((f) => ({
 					productId: product.id,
 					filamentId: f.filamentId,
 					gramsUsed: f.gramsUsed,
 				})),
+				{ transaction: t },
 			);
 		}
 
-		await product.update({
-			name,
-			weight,
-			timeToPrint,
-			laborCost,
-			extras,
-			machineId,
+		await product.update(
+			{ name, weight, timeToPrint, laborCost, extras, machineId },
+			{ transaction: t },
+		);
+
+		await t.commit();
+
+		const fullProduct = await Product.findByPk(product.id, {
+			include: productIncludes,
 		});
-
-		if (req.body.filaments) {
-			const filaments = JSON.parse(req.body.filaments);
-			await ProductFilament.destroy({ where: { productId: product.id } });
-			await ProductFilament.bulkCreate(
-				filaments.map((f) => ({
-					productId: product.id,
-					filamentId: f.filamentId,
-					gramsUsed: f.gramsUsed,
-				})),
-			);
-		}
+		const kwhPrice = await getKwhPrice();
 
 		res.status(200).json({
-			product,
+			product: {
+				...fullProduct.toJSON(),
+				cost: calculateProductCost(fullProduct, kwhPrice),
+			},
 			message: messages.product.updateSuccess,
 		});
 	} catch (_error) {
+		await t.rollback();
 		res.status(500).json({ error: messages.product.updateError });
 	}
 };
