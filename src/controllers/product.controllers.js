@@ -27,7 +27,7 @@ async function getKwhPrice() {
 
 export const getAllProducts = async (req, res) => {
 	try {
-		const { page, limit, offset } = getPagination(req.query, 9);
+		const { page, limit, offset } = getPagination(req.query, 6);
 		const { search } = req.query;
 		const where = search ? { name: { [Op.like]: `%${search}%` } } : undefined;
 
@@ -123,19 +123,7 @@ export const createProduct = async (req, res) => {
 		}
 
 		await t.commit();
-
-		const fullProduct = await Product.findByPk(product.id, {
-			include: productIncludes,
-		});
-		const kwhPrice = await getKwhPrice();
-
-		res.status(201).json({
-			product: {
-				...fullProduct.toJSON(),
-				cost: calculateProductCost(fullProduct, kwhPrice),
-			},
-			message: messages.product.createSuccess,
-		});
+		res.status(201).json({ product, message: messages.product.createSuccess });
 	} catch (_error) {
 		await t.rollback();
 		res.status(500).json({ error: messages.product.createError });
