@@ -2,6 +2,7 @@ import { Op } from "sequelize";
 import { messages } from "../helpers/messages.js";
 import { buildPagedResponse, getPagination } from "../helpers/pagination.js";
 import { Filament } from "../models/index.js";
+import { touchSyncState } from "../helpers/syncState.js"
 
 export const getAllFilaments = async (req, res) => {
 	try {
@@ -53,6 +54,7 @@ export const createFilament = async (req, res) => {
 			color,
 			pricePerKg,
 		});
+		await touchSyncState();
 		res.status(201).json({
 			filament,
 			message: messages.filament.createSuccess,
@@ -71,6 +73,7 @@ export const updateFilament = async (req, res) => {
 			return res.status(404).json({ message: messages.filament.notFound });
 		}
 		await filament.update({ brand, material, diameter, color, pricePerKg });
+		await touchSyncState();
 		res.status(200).json({
 			filament,
 			message: messages.filament.updateSuccess,
@@ -88,6 +91,7 @@ export const deleteFilament = async (req, res) => {
 			return res.status(404).json({ message: messages.filament.notFound });
 		}
 		await filament.destroy();
+		await touchSyncState();
 		res.status(200).json({ message: messages.filament.deleteSuccess });
 	} catch (_error) {
 		res.status(500).json({ error: messages.filament.deleteError });

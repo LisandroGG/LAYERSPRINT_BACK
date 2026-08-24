@@ -11,6 +11,7 @@ import {
 	Settings,
 	sequelize,
 } from "../models/index.js";
+import { touchSyncState } from "../helpers/syncState.js"
 
 const productIncludes = [
 	{ model: Machine },
@@ -123,6 +124,7 @@ export const createProduct = async (req, res) => {
 		}
 
 		await t.commit();
+		await touchSyncState();
 		res.status(201).json({ product, message: messages.product.createSuccess });
 	} catch (_error) {
 		await t.rollback();
@@ -174,19 +176,9 @@ export const updateProduct = async (req, res) => {
 		);
 
 		await t.commit();
+		await touchSyncState();
 
-		const fullProduct = await Product.findByPk(product.id, {
-			include: productIncludes,
-		});
-		const kwhPrice = await getKwhPrice();
-
-		res.status(200).json({
-			product: {
-				...fullProduct.toJSON(),
-				cost: calculateProductCost(fullProduct, kwhPrice),
-			},
-			message: messages.product.updateSuccess,
-		});
+		res.status(200).json({ product, message: messages.product.updateSuccess });
 	} catch (_error) {
 		await t.rollback();
 		res.status(500).json({ error: messages.product.updateError });
@@ -203,8 +195,33 @@ export const deleteProduct = async (req, res) => {
 		await deleteImage(product.imagePublicId);
 		await ProductFilament.destroy({ where: { productId: product.id } });
 		await product.destroy();
+		await touchSyncState();
 		res.status(200).json({ message: messages.product.deleteSuccess });
 	} catch (_error) {
 		res.status(500).json({ error: messages.product.deleteError });
+	}
+};
+
+export const getSyncStatus = async (_req, res) => {
+	try {
+		const [settings] = await Settings.findOrCreate({ where: { id: 1 }, defaults: { kwhPrice: 0 } });
+		res.status(200).json({ lastModifiedAt: settings.lastModifiedAt });
+	} catch (_error) {
+		res.status(500).json({ error: "Error al obtener el estado de sincronización" });
+	}
+};
+
+export const getProductsForSync = async (_req, res) => {
+	try {
+		const products = await Product.findAll({ order: [["id", "ASC"]], include: productIncludes });
+		const kwhPrice = await getKwhPrice();
+		const withCost = products.map((p) => ({ ...p.toJSON(), cost: calculateProductCost(p, kwhPrice) }));
+
+		res.status(200).json({
+			syncedAt: new Date().toISOString(),
+			products: withCost,
+		});
+	} catch (_error) {
+		res.status(500).json({ error: messages.product.getError });
 	}
 };

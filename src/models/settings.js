@@ -14,6 +14,10 @@ export default function defineSettings(sequelize) {
 				allowNull: false,
 				defaultValue: 0,
 			},
+			lastModifiedAt: {
+				type: DataTypes.DATE,
+				allowNull: true,
+			}
 		},
 		{
 			timestamps: false,

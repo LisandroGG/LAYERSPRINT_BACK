@@ -2,6 +2,7 @@ import { Op } from "sequelize";
 import { messages } from "../helpers/messages.js";
 import { buildPagedResponse, getPagination } from "../helpers/pagination.js";
 import { Machine } from "../models/index.js";
+import { touchSyncState } from "../helpers/syncState.js"
 
 export const getAllMachines = async (req, res) => {
 	try {
@@ -36,6 +37,7 @@ export const createMachine = async (req, res) => {
 	const { name, watts, depreciationPerHour } = req.body;
 	try {
 		const machine = await Machine.create({ name, watts, depreciationPerHour });
+		await touchSyncState();
 		res.status(201).json({
 			machine,
 			message: messages.machine.createSuccess,
@@ -54,6 +56,7 @@ export const updateMachine = async (req, res) => {
 			return res.status(404).json({ message: messages.machine.notFound });
 		}
 		await machine.update({ name, watts, depreciationPerHour });
+		await touchSyncState();
 		res.status(200).json({
 			machine,
 			message: messages.machine.updateSuccess,
@@ -71,6 +74,7 @@ export const deleteMachine = async (req, res) => {
 			return res.status(404).json({ message: messages.machine.notFound });
 		}
 		await machine.destroy();
+		await touchSyncState();
 		res.status(200).json({ message: messages.machine.deleteSuccess });
 	} catch (_error) {
 		res.status(500).json({ error: messages.machine.deleteError });
