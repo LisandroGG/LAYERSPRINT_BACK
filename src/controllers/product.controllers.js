@@ -143,11 +143,14 @@ export const updateProduct = async (req, res) => {
 			return res.status(404).json({ message: messages.product.notFound });
 		}
 
+		let imageUrl = product.imageUrl;
+		let imagePublicId = product.imagePublicId;
+
 		if (req.file) {
 			await deleteImage(product.imagePublicId);
 			const uploaded = await uploadImage(req.file.buffer, req.file.mimetype);
-			product.imageUrl = uploaded.url;
-			product.imagePublicId = uploaded.publicId;
+			imageUrl = uploaded.url;
+			imagePublicId = uploaded.publicId;
 		}
 
 		let weight = product.weight;
@@ -171,7 +174,7 @@ export const updateProduct = async (req, res) => {
 		}
 
 		await product.update(
-			{ name, weight, timeToPrint, laborCost, extras, machineId },
+			{ name, weight, timeToPrint, laborCost, extras, machineId, imageUrl, imagePublicId },
 			{ transaction: t },
 		);
 
