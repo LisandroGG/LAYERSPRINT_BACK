@@ -38,6 +38,7 @@ export const getAllProducts = async (req, res) => {
 			offset,
 			order: [["id", "ASC"]],
 			include: productIncludes,
+			distinct: true,
 		});
 		const kwhPrice = await getKwhPrice();
 		const withCost = rows.map((product) => ({
