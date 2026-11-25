@@ -205,27 +205,3 @@ export const deleteProduct = async (req, res) => {
 		res.status(500).json({ error: messages.product.deleteError });
 	}
 };
-
-export const getSyncStatus = async (_req, res) => {
-	try {
-		const [settings] = await Settings.findOrCreate({ where: { id: 1 }, defaults: { kwhPrice: 0 } });
-		res.status(200).json({ lastModifiedAt: settings.lastModifiedAt });
-	} catch (_error) {
-		res.status(500).json({ error: "Error al obtener el estado de sincronización" });
-	}
-};
-
-export const getProductsForSync = async (_req, res) => {
-	try {
-		const products = await Product.findAll({ order: [["id", "ASC"]], include: productIncludes });
-		const kwhPrice = await getKwhPrice();
-		const withCost = products.map((p) => ({ ...p.toJSON(), cost: calculateProductCost(p, kwhPrice) }));
-
-		res.status(200).json({
-			syncedAt: new Date().toISOString(),
-			products: withCost,
-		});
-	} catch (_error) {
-		res.status(500).json({ error: messages.product.getError });
-	}
-};

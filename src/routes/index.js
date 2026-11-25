@@ -3,6 +3,7 @@ import { filamentRouter } from "./filament.routes.js";
 import { machineRouter } from "./machine.routes.js";
 import { productRouter } from "./product.routes.js";
 import { settingsRouter } from "./settings.routes.js";
+import { syncRouter } from "./sync.routes.js";
 
 export const mainRouter = Router();
 
@@ -14,3 +15,4 @@ mainRouter.use("/machines", machineRouter);
 mainRouter.use("/filaments", filamentRouter);
 mainRouter.use("/settings", settingsRouter);
 mainRouter.use("/products", productRouter);
+mainRouter.use("/sync", syncRouter);

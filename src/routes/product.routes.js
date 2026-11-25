@@ -7,8 +7,6 @@ import {
 	getProductById,
 	getProductsNoPaginated,
 	updateProduct,
-	getProductsForSync,
-	getSyncStatus
 } from "../controllers/product.controllers.js";
 import { validateProductBody } from "../middlewares/product.middleware.js";
 
@@ -16,8 +14,6 @@ export const productRouter = Router();
 
 productRouter.get("/", getAllProducts);
 productRouter.get("/not-paginated", getProductsNoPaginated);
-productRouter.get("/sync/status", getSyncStatus);
-productRouter.get("/sync", getProductsForSync);
 productRouter.get("/:id", getProductById);
 productRouter.post(
 	"/",
